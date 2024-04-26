@@ -67,18 +67,26 @@ class TAC_Returnprivate(TAC_Statement):
 
     @TAC_Statement.handler_with_side_effects
     def handle(self, state: SymbolicEVMState):
-        # pop stack frame (read callprivate pc from stack)
+        returnprivate_arg_names = self.arg_vars[1:]
+        returnprivate_args = [state.registers[arg] for arg in returnprivate_arg_names]
+
+        return self.return_values(state, returnprivate_args)
+
+    @staticmethod
+    def return_values(state: SymbolicEVMState, values: list):
+        """
+        Perform a function return, returning the values in the given list.
+
+        This function is static so that it can be called from the symprocedures.
+        """
         callprivate_pc, saved_return_pc, callprivate_return_vars = state.callstack.pop()
 
-        # set the return variables to their correct values
-        returnprivate_args = self.arg_vars[1:]
-        for callprivate_return_var, returnprivate_arg in zip(callprivate_return_vars, returnprivate_args):
-            state.registers[callprivate_return_var] = state.registers[returnprivate_arg]
-
+        for callprivate_return_var, value in zip(callprivate_return_vars, values):
+            state.registers[callprivate_return_var] = value
+        
         state.pc = saved_return_pc
 
         return [state]
-
 
 class TAC_Phi(TAC_Statement):
     __internal_name__ = "PHI"
